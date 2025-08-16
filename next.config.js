@@ -2,14 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'standalone',
   images: {
     domains: ['leo.pvthostel.com', 'images.unsplash.com'],
     formats: ['image/avif', 'image/webp'],
-  },
-  i18n: {
-    locales: ['en', 'fr'],
-    defaultLocale: 'en',
   },
   async headers() {
     return [
