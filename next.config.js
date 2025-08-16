@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
   images: {
     domains: ['leo.pvthostel.com', 'images.unsplash.com'],
     formats: ['image/avif', 'image/webp'],
