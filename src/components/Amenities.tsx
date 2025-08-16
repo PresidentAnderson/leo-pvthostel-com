@@ -1,4 +1,4 @@
-import { Wifi, Coffee, Lock, Utensils, Tv, Shield, Car, Luggage, Bath, GameController2, BookOpen, Users } from 'lucide-react'
+import { Wifi, Coffee, Lock, Utensils, Tv, Shield, Car, Luggage, Bath, Gamepad2, BookOpen, Users } from 'lucide-react'
 
 const amenities = [
   {
@@ -47,7 +47,7 @@ const amenities = [
     description: 'Clean bathrooms with hot water available round the clock',
   },
   {
-    icon: GameController2,
+    icon: Gamepad2,
     title: 'Game Room',
     description: 'Pool table, board games, and gaming consoles for entertainment',
   },
