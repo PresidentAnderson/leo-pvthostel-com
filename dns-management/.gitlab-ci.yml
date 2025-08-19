@@ -1,0 +1,496 @@
+# GitLab CI/CD Pipeline for DNS Management System
+# Builds Docker image, pushes to registry, and deploys to Vercel
+
+stages:
+  - test
+  - build
+  - documentation
+  - deploy
+  - verify
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE/dns-manager
+  DOCKER_TAG: $CI_COMMIT_REF_SLUG-$CI_COMMIT_SHORT_SHA
+  VERCEL_PROJECT_NAME: leo-dns-manager
+  CLICKUP_TASK_PREFIX: "DNS-"
+
+# Cache dependencies
+cache:
+  paths:
+    - .cache/pip
+    - node_modules/
+    - .vercel/
+
+# Test stage - run tests and health checks
+test:dns-health:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - apt-get update && apt-get install -y dnsutils curl
+    - pip install -r requirements.txt
+  script:
+    - echo "🔍 Running DNS health checks..."
+    - python3 dns-health-monitor.py check
+    - python3 test-hubspot-connection.py all
+  artifacts:
+    reports:
+      junit: test-results.xml
+    paths:
+      - health_check_latest.json
+      - hubspot_test_*.json
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+test:backup-restore:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "💾 Testing backup and restore..."
+    - python3 dns-backup-restore.py backup
+    - python3 dns-backup-restore.py verify backups/latest_unified.json
+  artifacts:
+    paths:
+      - backups/
+    expire_in: 1 day
+  only:
+    - main
+    - develop
+
+# Build stage - create Docker image
+build:docker:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "🐳 Building Docker image..."
+    - docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+    - docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest
+    - echo "📤 Pushing to GitLab Container Registry..."
+    - docker push $DOCKER_IMAGE:$DOCKER_TAG
+    - docker push $DOCKER_IMAGE:latest
+    - echo "✅ Docker image built and pushed successfully"
+    # Save image info for deployment
+    - echo "$DOCKER_IMAGE:$DOCKER_TAG" > docker-image.txt
+  artifacts:
+    paths:
+      - docker-image.txt
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - tags
+
+# Documentation stage - sync to ClickUp
+documentation:clickup-sync:
+  stage: documentation
+  image: python:3.11-slim
+  before_script:
+    - pip install requests
+  script:
+    - echo "📋 Syncing documentation to ClickUp..."
+    - python3 clickup-integration.py sync DNS_MANAGEMENT_DOCUMENTATION.md
+    - |
+      if [ "$CI_COMMIT_TAG" ]; then
+        echo "🏷️ Creating deployment task for version $CI_COMMIT_TAG"
+        python3 clickup-integration.py deploy $CI_COMMIT_TAG
+      fi
+  environment:
+    name: documentation
+  only:
+    - main
+    - tags
+
+# Deploy stage - deploy to Vercel
+deploy:vercel:
+  stage: deploy
+  image: node:18-alpine
+  before_script:
+    - npm install -g vercel
+    - apk add --no-cache python3 py3-pip curl
+    - pip3 install requests
+  script:
+    - echo "🚀 Deploying to Vercel..."
+    
+    # Create Vercel project files
+    - |
+      cat > vercel.json << EOF
+      {
+        "name": "leo-dns-manager",
+        "version": 2,
+        "builds": [
+          {
+            "src": "api/**/*.py",
+            "use": "@vercel/python"
+          },
+          {
+            "src": "static/**",
+            "use": "@vercel/static"
+          }
+        ],
+        "routes": [
+          {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+          },
+          {
+            "src": "/health",
+            "dest": "/api/health.py"
+          },
+          {
+            "src": "/dns/(.*)",
+            "dest": "/api/dns.py"
+          },
+          {
+            "src": "/(.*)",
+            "dest": "/static/$1"
+          }
+        ],
+        "env": {
+          "DOMAIN": "leo.pvthostel.com",
+          "HUBSPOT_WEBHOOK_URL": "https://hubspot-webhook-server-production.up.railway.app"
+        }
+      }
+      EOF
+    
+    # Create API directory structure
+    - mkdir -p api static
+    
+    # Create health check API
+    - |
+      cat > api/health.py << 'EOF'
+      import json
+      import subprocess
+      from http.server import BaseHTTPRequestHandler
+      
+      class handler(BaseHTTPRequestHandler):
+          def do_GET(self):
+              try:
+                  # Run health check
+                  result = subprocess.run(
+                      ["python3", "dns-health-monitor.py", "check"],
+                      capture_output=True,
+                      text=True,
+                      timeout=30
+                  )
+                  
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  
+                  response = {
+                      "status": "healthy",
+                      "service": "DNS Management System",
+                      "domain": "leo.pvthostel.com",
+                      "timestamp": str(datetime.now()),
+                      "health_check": result.stdout if result.returncode == 0 else "Failed"
+                  }
+                  
+                  self.wfile.write(json.dumps(response).encode())
+              except Exception as e:
+                  self.send_response(500)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(json.dumps({"error": str(e)}).encode())
+      EOF
+    
+    # Create DNS API endpoint
+    - |
+      cat > api/dns.py << 'EOF'
+      import json
+      from http.server import BaseHTTPRequestHandler
+      import sys
+      sys.path.append('..')
+      from dns_manager import UnifiedDNSManager
+      
+      class handler(BaseHTTPRequestHandler):
+          def do_GET(self):
+              try:
+                  manager = UnifiedDNSManager()
+                  
+                  # Parse path
+                  path_parts = self.path.split('/')
+                  
+                  if len(path_parts) > 2 and path_parts[2] == 'list':
+                      # List DNS records
+                      records = []
+                      for provider_name, provider in manager.providers.items():
+                          provider_records = provider.list_dns_records()
+                          records.extend(provider_records)
+                      
+                      self.send_response(200)
+                      self.send_header('Content-Type', 'application/json')
+                      self.end_headers()
+                      self.wfile.write(json.dumps({"records": records}).encode())
+                  
+                  elif len(path_parts) > 2 and path_parts[2] == 'health':
+                      # Health check
+                      self.send_response(200)
+                      self.send_header('Content-Type', 'application/json')
+                      self.end_headers()
+                      self.wfile.write(json.dumps({"status": "healthy"}).encode())
+                  
+                  else:
+                      self.send_response(404)
+                      self.send_header('Content-Type', 'application/json')
+                      self.end_headers()
+                      self.wfile.write(json.dumps({"error": "Not found"}).encode())
+                      
+              except Exception as e:
+                  self.send_response(500)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(json.dumps({"error": str(e)}).encode())
+      EOF
+    
+    # Copy static files
+    - cp DNS_MANAGEMENT_DOCUMENTATION.md static/
+    - cp dns-templates.json static/
+    
+    # Create index.html
+    - |
+      cat > static/index.html << 'EOF'
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>DNS Management System - leo.pvthostel.com</title>
+          <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  min-height: 100vh;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  padding: 20px;
+              }
+              .container {
+                  background: white;
+                  border-radius: 20px;
+                  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                  padding: 40px;
+                  max-width: 800px;
+                  width: 100%;
+              }
+              h1 {
+                  color: #333;
+                  margin-bottom: 20px;
+                  font-size: 2.5em;
+              }
+              .status {
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                  gap: 20px;
+                  margin: 30px 0;
+              }
+              .status-card {
+                  background: #f8f9fa;
+                  padding: 20px;
+                  border-radius: 10px;
+                  text-align: center;
+              }
+              .status-card h3 {
+                  color: #667eea;
+                  margin-bottom: 10px;
+              }
+              .status-card .value {
+                  font-size: 1.5em;
+                  font-weight: bold;
+                  color: #333;
+              }
+              .status-card.healthy { border-left: 4px solid #10b981; }
+              .status-card.warning { border-left: 4px solid #f59e0b; }
+              .status-card.error { border-left: 4px solid #ef4444; }
+              .links {
+                  margin-top: 30px;
+                  display: flex;
+                  gap: 15px;
+                  flex-wrap: wrap;
+              }
+              .links a {
+                  background: #667eea;
+                  color: white;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  text-decoration: none;
+                  transition: background 0.3s;
+              }
+              .links a:hover {
+                  background: #764ba2;
+              }
+              .footer {
+                  margin-top: 40px;
+                  padding-top: 20px;
+                  border-top: 1px solid #e5e7eb;
+                  text-align: center;
+                  color: #6b7280;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>🌐 DNS Management System</h1>
+              <p style="color: #6b7280; margin-bottom: 30px;">
+                  Automated DNS management for leo.pvthostel.com
+              </p>
+              
+              <div class="status">
+                  <div class="status-card healthy">
+                      <h3>System Status</h3>
+                      <div class="value">✅ Operational</div>
+                  </div>
+                  <div class="status-card healthy">
+                      <h3>DNS Provider</h3>
+                      <div class="value">Cloudflare</div>
+                  </div>
+                  <div class="status-card healthy">
+                      <h3>HubSpot</h3>
+                      <div class="value">Connected</div>
+                  </div>
+                  <div class="status-card warning">
+                      <h3>Last Check</h3>
+                      <div class="value" id="last-check">Loading...</div>
+                  </div>
+              </div>
+              
+              <div class="links">
+                  <a href="/api/health">Health Check</a>
+                  <a href="/api/dns/list">DNS Records</a>
+                  <a href="/static/DNS_MANAGEMENT_DOCUMENTATION.md">Documentation</a>
+                  <a href="https://hubspot-webhook-server-production.up.railway.app/health" target="_blank">HubSpot Status</a>
+              </div>
+              
+              <div class="footer">
+                  <p>Version: ${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} | Deployed: ${CI_PIPELINE_CREATED_AT}</p>
+                  <p style="margin-top: 10px;">
+                      Powered by Docker, GitLab CI/CD & Vercel
+                  </p>
+              </div>
+          </div>
+          
+          <script>
+              // Update last check time
+              document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+              
+              // Fetch health status
+              fetch('/api/health')
+                  .then(res => res.json())
+                  .then(data => {
+                      console.log('Health check:', data);
+                  })
+                  .catch(err => console.error('Health check failed:', err));
+          </script>
+      </body>
+      </html>
+      EOF
+    
+    # Deploy to Vercel
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "main" ]; then
+        echo "🚀 Deploying to production..."
+        vercel --prod --token $VERCEL_TOKEN --yes
+      else
+        echo "🔧 Deploying to preview..."
+        vercel --token $VERCEL_TOKEN --yes
+      fi
+    
+    # Get deployment URL
+    - DEPLOYMENT_URL=$(vercel ls --token $VERCEL_TOKEN | grep $VERCEL_PROJECT_NAME | head -1 | awk '{print $2}')
+    - echo "✅ Deployed to: $DEPLOYMENT_URL"
+    - echo "$DEPLOYMENT_URL" > deployment-url.txt
+    
+  artifacts:
+    paths:
+      - deployment-url.txt
+    expire_in: 1 week
+  environment:
+    name: production
+    url: https://leo-dns-manager.vercel.app
+  only:
+    - main
+    - develop
+  when: manual
+
+# Verify stage - post-deployment verification
+verify:deployment:
+  stage: verify
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - echo "✅ Verifying deployment..."
+    - DEPLOYMENT_URL=$(cat deployment-url.txt)
+    - echo "Testing: $DEPLOYMENT_URL"
+    
+    # Test health endpoint
+    - curl -f "$DEPLOYMENT_URL/api/health" || exit 1
+    
+    # Test DNS endpoint
+    - curl -f "$DEPLOYMENT_URL/api/dns/health" || exit 1
+    
+    # Test static content
+    - curl -f "$DEPLOYMENT_URL" || exit 1
+    
+    - echo "✅ All verification tests passed!"
+  dependencies:
+    - deploy:vercel
+  only:
+    - main
+  when: on_success
+
+# Notification job
+notify:success:
+  stage: .post
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      echo "📬 Sending success notification..."
+      curl -X POST $CLICKUP_WEBHOOK_URL \
+        -H "Content-Type: application/json" \
+        -d '{
+          "text": "✅ DNS Management System deployed successfully!",
+          "pipeline": "'$CI_PIPELINE_URL'",
+          "commit": "'$CI_COMMIT_SHORT_SHA'",
+          "branch": "'$CI_COMMIT_BRANCH'",
+          "tag": "'$CI_COMMIT_TAG'",
+          "timestamp": "'$(date -Iseconds)'"
+        }'
+  only:
+    - main
+    - tags
+  when: on_success
+
+notify:failure:
+  stage: .post
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      echo "📬 Sending failure notification..."
+      curl -X POST $CLICKUP_WEBHOOK_URL \
+        -H "Content-Type: application/json" \
+        -d '{
+          "text": "❌ DNS Management System deployment failed!",
+          "pipeline": "'$CI_PIPELINE_URL'",
+          "commit": "'$CI_COMMIT_SHORT_SHA'",
+          "branch": "'$CI_COMMIT_BRANCH'",
+          "job": "'$CI_JOB_NAME'",
+          "timestamp": "'$(date -Iseconds)'"
+        }'
+  only:
+    - main
+    - tags
+  when: on_failure

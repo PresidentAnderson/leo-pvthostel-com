@@ -1,0 +1,89 @@
+{
+  "host": "ftp.leo.pvthostel.com",
+  "port": 21,
+  "username": "",
+  "password": "",
+  "remote_path": "/public_html",
+  "local_path": "../out",
+  "use_tls": true,
+  "passive_mode": true,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "retry_delay": 5,
+  "ignore_patterns": [
+    ".git",
+    ".env",
+    ".env.*",
+    "node_modules",
+    "*.log",
+    ".DS_Store",
+    "Thumbs.db",
+    "*.pyc",
+    "__pycache__",
+    ".vscode",
+    ".idea",
+    "*.swp",
+    "*.swo",
+    "*.bak",
+    "*.tmp",
+    ".gitignore",
+    "README.md",
+    "package-lock.json",
+    "yarn.lock",
+    "composer.lock"
+  ],
+  "file_permissions": {
+    "directories": "755",
+    "files": "644",
+    "executables": "755"
+  },
+  "deployment_profiles": {
+    "production": {
+      "host": "ftp.leo.pvthostel.com",
+      "remote_path": "/public_html",
+      "local_path": "../.next",
+      "clean_before_deploy": false
+    },
+    "staging": {
+      "host": "staging-ftp.leo.pvthostel.com",
+      "remote_path": "/staging",
+      "local_path": "../dist",
+      "clean_before_deploy": true
+    },
+    "backup": {
+      "host": "backup.leo.pvthostel.com",
+      "remote_path": "/backups",
+      "local_path": "../",
+      "clean_before_deploy": false
+    }
+  },
+  "hooks": {
+    "before_deploy": [
+      "npm run build",
+      "npm run test"
+    ],
+    "after_deploy": [
+      "echo 'Deployment completed at $(date)' >> deployment.log"
+    ]
+  },
+  "notification": {
+    "enabled": true,
+    "email": "admin@leo.pvthostel.com",
+    "slack_webhook": "",
+    "on_success": true,
+    "on_failure": true
+  },
+  "backup": {
+    "enabled": true,
+    "keep_backups": 5,
+    "backup_before_deploy": true,
+    "backup_path": "/backups"
+  },
+  "sync_options": {
+    "delete_remote_files": false,
+    "preserve_timestamps": true,
+    "compress_transfer": true,
+    "verify_transfer": true,
+    "resume_on_failure": true
+  }
+}

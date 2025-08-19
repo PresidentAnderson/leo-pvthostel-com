@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-08-19T10:57:26.949041",
+  "domain": "leo.pvthostel.com",
+  "checks": {
+    "a_records": {
+      "values": [
+        "104.26.10.172",
+        "104.26.11.172",
+        "172.67.68.171"
+      ],
+      "status": "\u2705"
+    },
+    "www_cname": {
+      "values": [
+        "NoAnswer"
+      ],
+      "status": "\u26a0\ufe0f"
+    },
+    "propagation": {
+      "8.8.8.8": {
+        "status": "\u2705",
+        "value": "104.26.11.172",
+        "match": true
+      },
+      "1.1.1.1": {
+        "status": "\u2705",
+        "value": "104.26.10.172",
+        "match": true
+      },
+      "208.67.222.222": {
+        "status": "\u2705",
+        "value": "104.26.11.172",
+        "match": true
+      },
+      "9.9.9.9": {
+        "status": "\u2705",
+        "value": "104.26.10.172",
+        "match": true
+      },
+      "64.6.64.6": {
+        "status": "\u2705",
+        "value": "172.67.68.171",
+        "match": true
+      }
+    },
+    "ssl": {
+      "status": "\u274c Error",
+      "error": "'bytes' object has no attribute 'encode'",
+      "hostname": "leo.pvthostel.com"
+    },
+    "http": {
+      "status_code": 403,
+      "status": "\u26a0\ufe0f",
+      "response_time": 0.470625,
+      "final_url": "https://leo.pvthostel.com/",
+      "redirects": 0
+    },
+    "mail": {
+      "mx": [
+        "NoAnswer"
+      ],
+      "spf": null,
+      "dmarc": "NoAnswer",
+      "dkim": []
+    }
+  }
+}

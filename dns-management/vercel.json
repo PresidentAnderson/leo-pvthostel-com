@@ -1,0 +1,125 @@
+{
+  "name": "leo-dns-manager",
+  "version": 2,
+  "public": false,
+  "github": {
+    "enabled": false
+  },
+  "builds": [
+    {
+      "src": "api/**/*.py",
+      "use": "@vercel/python@3.0.0",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.11"
+      }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "public"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/health",
+      "dest": "/api/health.py"
+    },
+    {
+      "src": "/api/dns/list",
+      "dest": "/api/dns-list.py"
+    },
+    {
+      "src": "/api/dns/check",
+      "dest": "/api/dns-check.py"
+    },
+    {
+      "src": "/api/hubspot/test",
+      "dest": "/api/hubspot-test.py"
+    },
+    {
+      "src": "/api/backup",
+      "dest": "/api/backup.py"
+    },
+    {
+      "src": "/api/clickup/sync",
+      "dest": "/api/clickup-sync.py"
+    },
+    {
+      "src": "/docs",
+      "dest": "/public/documentation.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "DOMAIN": "@domain",
+    "CLOUDFLARE_API_TOKEN": "@cloudflare_api_token",
+    "CLICKUP_API_KEY": "@clickup_api_key",
+    "HUBSPOT_WEBHOOK_URL": "@hubspot_webhook_url"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "api/**/*.py": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "trailingSlash": false,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/dns",
+      "destination": "/api/dns/list"
+    }
+  ]
+}

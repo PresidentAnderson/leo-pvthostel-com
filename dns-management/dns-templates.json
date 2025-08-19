@@ -1,0 +1,639 @@
+{
+  "templates": {
+    "vercel": {
+      "name": "Vercel Deployment",
+      "description": "Configure DNS for Vercel hosting",
+      "records": [
+        {
+          "type": "A",
+          "name": "@",
+          "value": "76.76.21.21",
+          "ttl": 1,
+          "proxied": false,
+          "description": "Vercel's Anycast IP"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "cname.vercel-dns.com",
+          "ttl": 1,
+          "proxied": false,
+          "description": "WWW subdomain to Vercel"
+        }
+      ],
+      "notes": [
+        "Add domain in Vercel dashboard: vercel domains add leo.pvthostel.com",
+        "Deploy with: vercel --prod",
+        "SSL certificate will be auto-provisioned"
+      ]
+    },
+    "github-pages": {
+      "name": "GitHub Pages",
+      "description": "Configure DNS for GitHub Pages hosting",
+      "records": [
+        {
+          "type": "A",
+          "name": "@",
+          "value": "185.199.108.153",
+          "ttl": 3600,
+          "description": "GitHub Pages IP 1"
+        },
+        {
+          "type": "A",
+          "name": "@",
+          "value": "185.199.109.153",
+          "ttl": 3600,
+          "description": "GitHub Pages IP 2"
+        },
+        {
+          "type": "A",
+          "name": "@",
+          "value": "185.199.110.153",
+          "ttl": 3600,
+          "description": "GitHub Pages IP 3"
+        },
+        {
+          "type": "A",
+          "name": "@",
+          "value": "185.199.111.153",
+          "ttl": 3600,
+          "description": "GitHub Pages IP 4"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "{username}.github.io",
+          "ttl": 3600,
+          "description": "WWW to GitHub Pages"
+        }
+      ],
+      "notes": [
+        "Create CNAME file in repository root with: leo.pvthostel.com",
+        "Enable Pages in repository settings",
+        "SSL via GitHub's Let's Encrypt integration"
+      ]
+    },
+    "cloudflare-pages": {
+      "name": "Cloudflare Pages",
+      "description": "Configure DNS for Cloudflare Pages",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "@",
+          "value": "{project}.pages.dev",
+          "ttl": 1,
+          "proxied": true,
+          "description": "Root domain to CF Pages"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "{project}.pages.dev",
+          "ttl": 1,
+          "proxied": true,
+          "description": "WWW to CF Pages"
+        }
+      ],
+      "notes": [
+        "Deploy with: npx wrangler pages publish",
+        "Custom domain added automatically",
+        "SSL and CDN included"
+      ]
+    },
+    "netlify": {
+      "name": "Netlify",
+      "description": "Configure DNS for Netlify hosting",
+      "records": [
+        {
+          "type": "A",
+          "name": "@",
+          "value": "75.2.60.5",
+          "ttl": 3600,
+          "description": "Netlify load balancer"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "{site-name}.netlify.app",
+          "ttl": 3600,
+          "description": "WWW to Netlify"
+        }
+      ],
+      "notes": [
+        "Add custom domain in Netlify dashboard",
+        "SSL certificate auto-provisioned",
+        "Deploy with: netlify deploy --prod"
+      ]
+    },
+    "railway": {
+      "name": "Railway",
+      "description": "Configure DNS for Railway deployment",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "@",
+          "value": "{app}.up.railway.app",
+          "ttl": 3600,
+          "proxied": false,
+          "description": "Root to Railway app"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "{app}.up.railway.app",
+          "ttl": 3600,
+          "proxied": false,
+          "description": "WWW to Railway app"
+        }
+      ],
+      "notes": [
+        "Add custom domain in Railway settings",
+        "SSL certificate auto-provisioned",
+        "Deploy with: railway up"
+      ]
+    },
+    "google-workspace": {
+      "name": "Google Workspace Email",
+      "description": "Configure MX records for Google Workspace",
+      "records": [
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "aspmx.l.google.com",
+          "priority": 1,
+          "ttl": 3600,
+          "description": "Primary Google mail server"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "alt1.aspmx.l.google.com",
+          "priority": 5,
+          "ttl": 3600,
+          "description": "Alt mail server 1"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "alt2.aspmx.l.google.com",
+          "priority": 5,
+          "ttl": 3600,
+          "description": "Alt mail server 2"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "alt3.aspmx.l.google.com",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Alt mail server 3"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "alt4.aspmx.l.google.com",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Alt mail server 4"
+        },
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:_spf.google.com ~all",
+          "ttl": 3600,
+          "description": "SPF record for Google"
+        },
+        {
+          "type": "TXT",
+          "name": "google._domainkey",
+          "value": "v=DKIM1; k=rsa; p={google-dkim-key}",
+          "ttl": 3600,
+          "description": "DKIM for Google"
+        },
+        {
+          "type": "TXT",
+          "name": "_dmarc",
+          "value": "v=DMARC1; p=quarantine; rua=mailto:admin@leo.pvthostel.com",
+          "ttl": 3600,
+          "description": "DMARC policy"
+        }
+      ],
+      "notes": [
+        "Verify domain ownership in Google Admin",
+        "DKIM key available in Google Admin > Apps > Gmail > Authenticate email",
+        "Test with: https://toolbox.googleapps.com/apps/checkmx/"
+      ]
+    },
+    "office365": {
+      "name": "Office 365 Email",
+      "description": "Configure MX records for Microsoft 365",
+      "records": [
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "leo-pvthostel-com.mail.protection.outlook.com",
+          "priority": 0,
+          "ttl": 3600,
+          "description": "Office 365 mail server"
+        },
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:spf.protection.outlook.com -all",
+          "ttl": 3600,
+          "description": "SPF for Office 365"
+        },
+        {
+          "type": "CNAME",
+          "name": "autodiscover",
+          "value": "autodiscover.outlook.com",
+          "ttl": 3600,
+          "description": "Autodiscover for Outlook"
+        },
+        {
+          "type": "CNAME",
+          "name": "selector1._domainkey",
+          "value": "selector1-leo-pvthostel-com._domainkey.{tenant}.onmicrosoft.com",
+          "ttl": 3600,
+          "description": "DKIM selector 1"
+        },
+        {
+          "type": "CNAME",
+          "name": "selector2._domainkey",
+          "value": "selector2-leo-pvthostel-com._domainkey.{tenant}.onmicrosoft.com",
+          "ttl": 3600,
+          "description": "DKIM selector 2"
+        }
+      ],
+      "notes": [
+        "Verify domain in Microsoft 365 admin center",
+        "DKIM keys in Security & Compliance Center",
+        "Test with: https://testconnectivity.microsoft.com"
+      ]
+    },
+    "zoho-mail": {
+      "name": "Zoho Mail",
+      "description": "Configure MX records for Zoho Mail",
+      "records": [
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "mx.zoho.com",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Primary Zoho mail server"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "mx2.zoho.com",
+          "priority": 20,
+          "ttl": 3600,
+          "description": "Secondary Zoho mail server"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "mx3.zoho.com",
+          "priority": 50,
+          "ttl": 3600,
+          "description": "Tertiary Zoho mail server"
+        },
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:zoho.com ~all",
+          "ttl": 3600,
+          "description": "SPF for Zoho"
+        },
+        {
+          "type": "TXT",
+          "name": "zmail._domainkey",
+          "value": "{zoho-dkim-value}",
+          "ttl": 3600,
+          "description": "DKIM for Zoho"
+        }
+      ],
+      "notes": [
+        "Verify domain in Zoho Mail Admin Console",
+        "DKIM available in Email Authentication settings",
+        "Free tier available for up to 5 users"
+      ]
+    },
+    "mailgun": {
+      "name": "Mailgun Email Service",
+      "description": "Configure DNS for Mailgun email delivery",
+      "records": [
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:mailgun.org ~all",
+          "ttl": 3600,
+          "description": "SPF for Mailgun"
+        },
+        {
+          "type": "TXT",
+          "name": "mg",
+          "value": "v=spf1 include:mailgun.org ~all",
+          "ttl": 3600,
+          "description": "SPF for mg subdomain"
+        },
+        {
+          "type": "CNAME",
+          "name": "email.mg",
+          "value": "mailgun.org",
+          "ttl": 3600,
+          "description": "Mailgun tracking"
+        },
+        {
+          "type": "TXT",
+          "name": "k1._domainkey.mg",
+          "value": "{mailgun-dkim}",
+          "ttl": 3600,
+          "description": "DKIM for Mailgun"
+        },
+        {
+          "type": "MX",
+          "name": "mg",
+          "value": "mxa.mailgun.org",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Mailgun MX 1"
+        },
+        {
+          "type": "MX",
+          "name": "mg",
+          "value": "mxb.mailgun.org",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Mailgun MX 2"
+        }
+      ],
+      "notes": [
+        "Verify domain in Mailgun dashboard",
+        "Use mg.leo.pvthostel.com for sending",
+        "API key required for sending"
+      ]
+    },
+    "sendgrid": {
+      "name": "SendGrid Email Service",
+      "description": "Configure DNS for SendGrid email delivery",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "em{number}",
+          "value": "u{number}.wl{number}.sendgrid.net",
+          "ttl": 3600,
+          "description": "SendGrid domain authentication"
+        },
+        {
+          "type": "CNAME",
+          "name": "s1._domainkey",
+          "value": "s1.domainkey.u{number}.wl{number}.sendgrid.net",
+          "ttl": 3600,
+          "description": "DKIM key 1"
+        },
+        {
+          "type": "CNAME",
+          "name": "s2._domainkey",
+          "value": "s2.domainkey.u{number}.wl{number}.sendgrid.net",
+          "ttl": 3600,
+          "description": "DKIM key 2"
+        },
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:sendgrid.net ~all",
+          "ttl": 3600,
+          "description": "SPF for SendGrid"
+        }
+      ],
+      "notes": [
+        "Authenticate domain in SendGrid settings",
+        "Exact CNAME values provided after domain authentication",
+        "API key required for sending"
+      ]
+    },
+    "aws-ses": {
+      "name": "AWS SES",
+      "description": "Configure DNS for Amazon SES email",
+      "records": [
+        {
+          "type": "TXT",
+          "name": "_amazonses",
+          "value": "{verification-token}",
+          "ttl": 3600,
+          "description": "Domain verification"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "10 inbound-smtp.{region}.amazonaws.com",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "SES inbound mail"
+        },
+        {
+          "type": "TXT",
+          "name": "@",
+          "value": "v=spf1 include:amazonses.com ~all",
+          "ttl": 3600,
+          "description": "SPF for SES"
+        },
+        {
+          "type": "CNAME",
+          "name": "{selector}._domainkey",
+          "value": "{selector}.dkim.amazonses.com",
+          "ttl": 3600,
+          "description": "DKIM for SES"
+        }
+      ],
+      "notes": [
+        "Verify domain in AWS SES console",
+        "DKIM tokens provided after verification",
+        "Configure sending in your AWS region"
+      ]
+    },
+    "wordpress": {
+      "name": "WordPress Hosting",
+      "description": "Generic WordPress hosting DNS",
+      "records": [
+        {
+          "type": "A",
+          "name": "@",
+          "value": "{server-ip}",
+          "ttl": 3600,
+          "description": "Server IP address"
+        },
+        {
+          "type": "A",
+          "name": "www",
+          "value": "{server-ip}",
+          "ttl": 3600,
+          "description": "WWW to server IP"
+        },
+        {
+          "type": "A",
+          "name": "ftp",
+          "value": "{server-ip}",
+          "ttl": 3600,
+          "description": "FTP subdomain"
+        },
+        {
+          "type": "CNAME",
+          "name": "mail",
+          "value": "@",
+          "ttl": 3600,
+          "description": "Mail subdomain"
+        },
+        {
+          "type": "MX",
+          "name": "@",
+          "value": "mail.leo.pvthostel.com",
+          "priority": 10,
+          "ttl": 3600,
+          "description": "Mail server"
+        }
+      ],
+      "notes": [
+        "Get server IP from hosting provider",
+        "Configure SSL in hosting panel",
+        "Set up email accounts in cPanel/hosting panel"
+      ]
+    },
+    "shopify": {
+      "name": "Shopify E-commerce",
+      "description": "Configure DNS for Shopify store",
+      "records": [
+        {
+          "type": "A",
+          "name": "@",
+          "value": "23.227.38.65",
+          "ttl": 3600,
+          "description": "Shopify IP"
+        },
+        {
+          "type": "CNAME",
+          "name": "www",
+          "value": "shops.myshopify.com",
+          "ttl": 3600,
+          "description": "WWW to Shopify"
+        }
+      ],
+      "notes": [
+        "Add custom domain in Shopify admin",
+        "SSL certificate auto-provisioned",
+        "Email handled by Shopify or third-party"
+      ]
+    },
+    "subdomain-api": {
+      "name": "API Subdomain",
+      "description": "Configure subdomain for API endpoint",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "api",
+          "value": "{api-endpoint}",
+          "ttl": 3600,
+          "proxied": true,
+          "description": "API endpoint"
+        },
+        {
+          "type": "TXT",
+          "name": "api",
+          "value": "api-version=v1",
+          "ttl": 3600,
+          "description": "API version indicator"
+        }
+      ],
+      "notes": [
+        "Configure CORS for api.leo.pvthostel.com",
+        "Enable rate limiting",
+        "Use Cloudflare proxy for DDoS protection"
+      ]
+    },
+    "subdomain-blog": {
+      "name": "Blog Subdomain",
+      "description": "Configure subdomain for blog",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "blog",
+          "value": "{blog-platform}",
+          "ttl": 3600,
+          "description": "Blog platform"
+        }
+      ],
+      "notes": [
+        "Options: Medium, Ghost, WordPress",
+        "Configure in blog platform settings",
+        "SSL handled by platform"
+      ]
+    },
+    "cdn": {
+      "name": "CDN Configuration",
+      "description": "Configure CDN subdomains",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "cdn",
+          "value": "{cdn-endpoint}",
+          "ttl": 3600,
+          "description": "CDN endpoint"
+        },
+        {
+          "type": "CNAME",
+          "name": "assets",
+          "value": "{cdn-endpoint}",
+          "ttl": 3600,
+          "description": "Assets CDN"
+        },
+        {
+          "type": "CNAME",
+          "name": "media",
+          "value": "{cdn-endpoint}",
+          "ttl": 3600,
+          "description": "Media CDN"
+        }
+      ],
+      "notes": [
+        "Options: Cloudflare, CloudFront, Fastly",
+        "Configure origin server",
+        "Set cache headers appropriately"
+      ]
+    }
+  },
+  "quick_actions": {
+    "verify_domain_ownership": {
+      "google": {
+        "type": "TXT",
+        "name": "@",
+        "value": "google-site-verification={verification-code}"
+      },
+      "microsoft": {
+        "type": "TXT",
+        "name": "@",
+        "value": "MS={verification-code}"
+      },
+      "facebook": {
+        "type": "TXT",
+        "name": "@",
+        "value": "facebook-domain-verification={verification-code}"
+      }
+    },
+    "security_records": {
+      "caa": {
+        "type": "CAA",
+        "name": "@",
+        "value": "0 issue \"letsencrypt.org\"",
+        "description": "Restrict SSL issuance to Let's Encrypt"
+      },
+      "dmarc_strict": {
+        "type": "TXT",
+        "name": "_dmarc",
+        "value": "v=DMARC1; p=reject; rua=mailto:dmarc@leo.pvthostel.com; ruf=mailto:dmarc@leo.pvthostel.com",
+        "description": "Strict DMARC policy"
+      }
+    }
+  }
+}

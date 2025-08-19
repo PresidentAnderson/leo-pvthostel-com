@@ -1,0 +1,42 @@
+{
+  "name": "leo-dns-manager",
+  "version": "1.0.0",
+  "description": "DNS Management System for leo.pvthostel.com",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "npm run build:api && npm run build:static",
+    "build:api": "mkdir -p api && cp *.py api/",
+    "build:static": "mkdir -p public && npm run generate:html",
+    "generate:html": "node scripts/generate-html.js",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "test": "python3 dns-health-monitor.py check && python3 test-hubspot-connection.py all",
+    "backup": "python3 dns-backup-restore.py backup",
+    "sync:clickup": "python3 clickup-integration.py sync DNS_MANAGEMENT_DOCUMENTATION.md",
+    "docker:build": "docker build -t leo-dns-manager .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "pipeline": "./deploy.sh"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/leo-pvthostel/dns-management.git"
+  },
+  "keywords": [
+    "dns",
+    "management",
+    "cloudflare",
+    "canspace",
+    "automation"
+  ],
+  "author": "Leo PVT Hostel DevOps Team",
+  "license": "MIT"
+}

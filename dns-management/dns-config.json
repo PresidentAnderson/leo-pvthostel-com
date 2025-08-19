@@ -1,0 +1,122 @@
+{
+  "domain": "leo.pvthostel.com",
+  "primary_provider": "cloudflare",
+  "providers": {
+    "cloudflare": {
+      "enabled": true,
+      "api_token": "YOUR_CLOUDFLARE_API_TOKEN",
+      "zone_id": null,
+      "notes": "Zone ID will be auto-detected if not specified"
+    },
+    "canspace": {
+      "enabled": true,
+      "username": "YOUR_CANSPACE_USERNAME",
+      "password": "YOUR_CANSPACE_PASSWORD",
+      "cpanel_url": "https://cpanel.canspace.ca:2083",
+      "notes": "Uses cPanel API v2"
+    }
+  },
+  "templates": {
+    "vercel": {
+      "description": "Configure DNS for Vercel deployment",
+      "records": [
+        {
+          "type": "A",
+          "name": "leo.pvthostel.com",
+          "value": "76.76.21.21",
+          "ttl": 1,
+          "proxied": false
+        },
+        {
+          "type": "CNAME",
+          "name": "www.leo.pvthostel.com",
+          "value": "cname.vercel-dns.com",
+          "ttl": 1,
+          "proxied": false
+        }
+      ]
+    },
+    "email": {
+      "description": "Configure email MX records",
+      "records": [
+        {
+          "type": "MX",
+          "name": "leo.pvthostel.com",
+          "value": "mail.leo.pvthostel.com",
+          "priority": 10,
+          "ttl": 14400
+        },
+        {
+          "type": "TXT",
+          "name": "leo.pvthostel.com",
+          "value": "v=spf1 a mx ip4:YOUR_SERVER_IP ~all",
+          "ttl": 14400
+        },
+        {
+          "type": "TXT",
+          "name": "_dmarc.leo.pvthostel.com",
+          "value": "v=DMARC1; p=none; rua=mailto:admin@leo.pvthostel.com",
+          "ttl": 14400
+        }
+      ]
+    }
+  },
+  "current_records": [
+    {
+      "type": "A",
+      "name": "leo.pvthostel.com",
+      "value": "CURRENT_IP_ADDRESS",
+      "ttl": 14400,
+      "notes": "Main website IP"
+    },
+    {
+      "type": "CNAME",
+      "name": "www.leo.pvthostel.com",
+      "value": "leo.pvthostel.com",
+      "ttl": 14400,
+      "notes": "WWW redirect"
+    }
+  ],
+  "bulk_update_example": [
+    {
+      "action": "create",
+      "type": "A",
+      "name": "api.leo.pvthostel.com",
+      "value": "192.168.1.100",
+      "ttl": 3600,
+      "proxied": true
+    },
+    {
+      "action": "create",
+      "type": "CNAME",
+      "name": "blog.leo.pvthostel.com",
+      "value": "leo.pvthostel.com",
+      "ttl": 14400,
+      "proxied": false
+    },
+    {
+      "action": "delete",
+      "name": "old.leo.pvthostel.com",
+      "type": "A"
+    }
+  ],
+  "monitoring": {
+    "check_interval": 3600,
+    "alert_email": "admin@leo.pvthostel.com",
+    "expected_records": [
+      {
+        "type": "A",
+        "name": "leo.pvthostel.com",
+        "value": "76.76.21.21"
+      }
+    ]
+  },
+  "last_sync": null,
+  "notes": [
+    "Always backup DNS records before making changes",
+    "Cloudflare API Token needs DNS:Edit permissions",
+    "Canspace uses cPanel API - ensure API access is enabled",
+    "TTL values: 1 = Automatic (Cloudflare), 14400 = 4 hours (standard)",
+    "Proxied = true enables Cloudflare CDN and protection"
+  ]
+}

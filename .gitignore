@@ -46,3 +46,6 @@ Thumbs.db
 
 # ClickUp Config
 clickup-project-config.json
+
+# Excluded directories
+wisdomos-community-hub/

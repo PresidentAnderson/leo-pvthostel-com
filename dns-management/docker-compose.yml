@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  dns-manager:
+    build: .
+    image: leo-pvthostel/dns-manager:latest
+    container_name: dns-manager
+    restart: unless-stopped
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - CANSPACE_USERNAME=${CANSPACE_USERNAME}
+      - CANSPACE_PASSWORD=${CANSPACE_PASSWORD}
+      - CLICKUP_API_KEY=${CLICKUP_API_KEY}
+      - HUBSPOT_API_KEY=${HUBSPOT_API_KEY}
+      - DOMAIN=leo.pvthostel.com
+      - TZ=America/Montreal
+    volumes:
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+      - ./dns-config.json:/app/dns-config.json
+      - ./dns-templates.json:/app/dns-templates.json
+    networks:
+      - dns-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=false"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dns-monitor:
+    build: .
+    image: leo-pvthostel/dns-manager:latest
+    container_name: dns-monitor
+    restart: unless-stopped
+    command: ["python3", "dns-health-monitor.py", "monitor", "3600"]
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - DOMAIN=leo.pvthostel.com
+      - ALERT_EMAIL=admin@leo.pvthostel.com
+    volumes:
+      - ./logs:/app/logs
+      - ./dns-config.json:/app/dns-config.json:ro
+    networks:
+      - dns-network
+    depends_on:
+      - dns-manager
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dns-backup:
+    build: .
+    image: leo-pvthostel/dns-manager:latest
+    container_name: dns-backup
+    restart: unless-stopped
+    command: ["sh", "-c", "while true; do python3 dns-backup-restore.py backup; sleep 86400; done"]
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - CANSPACE_USERNAME=${CANSPACE_USERNAME}
+      - CANSPACE_PASSWORD=${CANSPACE_PASSWORD}
+    volumes:
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+    networks:
+      - dns-network
+    depends_on:
+      - dns-manager
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  dns-network:
+    driver: bridge
+
+volumes:
+  backups:
+    driver: local
+  logs:
+    driver: local
