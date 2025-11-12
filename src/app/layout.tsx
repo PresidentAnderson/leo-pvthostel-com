@@ -5,6 +5,8 @@ import { Analytics } from '@/components/Analytics'
 import { Providers } from '@/components/Providers'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { ToastProvider } from '@/components/Toast'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -86,18 +88,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfairDisplay.variable} dark`}>
+    <html lang="en" className={`${inter.variable} ${playfairDisplay.variable}`}>
       <body className={`${inter.className} antialiased`}>
-        <Providers>
-          <Analytics />
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </Providers>
+        <ErrorBoundary>
+          <ToastProvider>
+            <Providers>
+              <Analytics />
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+            </Providers>
+          </ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

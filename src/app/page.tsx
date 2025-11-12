@@ -6,12 +6,15 @@ import Testimonials from '@/components/Testimonials'
 import FAQ from '@/components/FAQ'
 import CTA from '@/components/CTA'
 import BookingWidget from '@/components/BookingWidget'
+import { HomePageCTASection, UrgencyBannerSection } from '@/components/CTASection'
 
 export default function HomePage() {
   return (
     <>
       <Hero />
+      <UrgencyBannerSection />
       <BookingWidget />
+      <HomePageCTASection />
       <RoomShowcase />
       <Amenities />
       <Location />

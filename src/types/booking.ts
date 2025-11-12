@@ -144,13 +144,19 @@ export interface Booking {
   reference: string
   status: BookingStatus
   request: BookingRequest
-  confirmation: BookingConfirmation
+  confirmation?: BookingConfirmation
   payments: PaymentRecord[]
   modifications: BookingModification[]
   checkin?: CheckInRecord
   checkout?: CheckOutRecord
   createdAt: string
   updatedAt: string
+  
+  // Convenience accessors from request
+  checkInDate: string
+  checkOutDate: string
+  roomId: string
+  guests: GuestInfo[]
 }
 
 export interface BookingConfirmation {
@@ -385,6 +391,7 @@ export type BookingStatus =
   | 'checked-in'
   | 'checked-out'
   | 'cancelled'
+  | 'payment-failed'
   | 'no-show'
   | 'modified'
 
@@ -402,6 +409,7 @@ export type PaymentStatus =
   | 'completed'
   | 'failed'
   | 'refunded'
+  | 'cancelled'
   | 'partially-refunded'
 
 export type ModificationType = 
@@ -438,12 +446,15 @@ export interface AvailabilityResponse {
 }
 
 export interface AvailableRoom {
+  roomId: string
   room: Room
   availability: AvailabilitySlot[]
   totalPrice: number
   priceBreakdown: PriceBreakdown
   restrictions: BookingRestriction[]
   cancellationPolicy: CancellationPolicy
+  available: number
+  averageNightlyRate: number
 }
 
 export interface AlternativeOption {

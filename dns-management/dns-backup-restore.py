@@ -23,7 +23,7 @@ class DNSBackupRestore:
             domain: Domain to manage backups for
         """
         self.domain = domain
-        self.backup_dir = "/Volumes/DevOps/leo.pvthostel.com/dns-management/backups"
+        self.backup_dir = "/Volumes/DevOps/Projects/02-pvthostel-domains/leo.pvthostel.com/dns-management/backups"
         self.archive_dir = f"{self.backup_dir}/archive"
         self.config_file = "dns-config.json"
         

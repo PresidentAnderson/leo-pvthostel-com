@@ -27,6 +27,8 @@ import {
   ModificationChange
 } from '@/types/booking'
 import availabilityService from './availabilityService'
+import paymentService from './paymentService'
+import emailService from './emailService'
 
 // Mock data for demonstration
 const MOCK_BOOKINGS: Map<string, Booking> = new Map()
@@ -105,14 +107,64 @@ class BookingService {
       payments: [depositPayment],
       modifications: [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      
+      // Convenience accessors
+      checkInDate: request.checkInDate,
+      checkOutDate: request.checkOutDate,
+      roomId: request.roomId,
+      guests: request.guests
     }
 
     // Store the booking
     MOCK_BOOKINGS.set(bookingId, booking)
 
-    // Simulate payment processing
-    await this.processPayment(bookingId, depositPayment.id)
+    // Process payment through payment service
+    const paymentResponse = await paymentService.processBookingPayment(booking, 'credit-card')
+    
+    if (paymentResponse.success) {
+      // Update payment record
+      depositPayment.status = 'completed'
+      depositPayment.processedAt = new Date().toISOString()
+      depositPayment.transactionId = paymentResponse.transactionId
+      
+      // Update booking status
+      booking.status = 'confirmed'
+      booking.updatedAt = new Date().toISOString()
+      MOCK_BOOKINGS.set(bookingId, booking)
+
+      // Send confirmation email
+      try {
+        await emailService.sendBookingConfirmation(booking)
+        
+        // Schedule pre-arrival email (24 hours before check-in)
+        const preArrivalDate = new Date(booking.checkInDate)
+        preArrivalDate.setDate(preArrivalDate.getDate() - 1)
+        preArrivalDate.setHours(10, 0, 0, 0) // 10 AM day before
+        
+        if (preArrivalDate > new Date()) {
+          await emailService.scheduleEmail(booking, 'pre-arrival', preArrivalDate)
+        }
+        
+        // Schedule check-out follow-up email
+        const followUpDate = new Date(booking.checkOutDate)
+        followUpDate.setHours(14, 0, 0, 0) // 2 PM on check-out day
+        
+        await emailService.scheduleEmail(booking, 'check-out-follow-up', followUpDate)
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError)
+        // Don't fail the booking if email fails
+      }
+    } else {
+      // Payment failed
+      depositPayment.status = 'failed'
+      depositPayment.processedAt = new Date().toISOString()
+      booking.status = 'payment-failed'
+      booking.updatedAt = new Date().toISOString()
+      MOCK_BOOKINGS.set(bookingId, booking)
+      
+      throw new Error(`Payment failed: ${paymentResponse.message}`)
+    }
 
     return booking
   }
@@ -330,6 +382,15 @@ class BookingService {
     }
 
     MOCK_BOOKINGS.set(bookingId, booking)
+    
+    // Send cancellation confirmation email
+    try {
+      await emailService.sendCancellationConfirmation(booking)
+    } catch (emailError) {
+      console.error('Failed to send cancellation email:', emailError)
+      // Don't fail the cancellation if email fails
+    }
+    
     return booking
   }
 
@@ -387,7 +448,7 @@ class BookingService {
 
       // Update pricing
       const newRoom = availabilityResponse.results[0]
-      const priceDifference = newRoom.totalPrice - booking.confirmation.totalAmount
+      const priceDifference = newRoom.totalPrice - (booking.confirmation?.totalAmount || 0)
 
       // Create modification record
       const modification: BookingModification = {
@@ -403,8 +464,10 @@ class BookingService {
       }
 
       booking.modifications.push(modification)
-      booking.confirmation.totalAmount = newRoom.totalPrice
-      booking.confirmation.priceBreakdown = newRoom.priceBreakdown
+      if (booking.confirmation) {
+        booking.confirmation.totalAmount = newRoom.totalPrice
+        booking.confirmation.priceBreakdown = newRoom.priceBreakdown
+      }
     }
 
     // Apply modifications
@@ -434,14 +497,14 @@ class BookingService {
     }
 
     // Generate room keys
-    const roomKeys: RoomKey[] = booking.confirmation.roomAssignments.map(assignment => ({
-      type: 'digital',
+    const roomKeys: RoomKey[] = booking.confirmation?.roomAssignments?.map(assignment => ({
+      type: 'digital' as const,
       keyId: this.generateKeyId(),
       accessCode: assignment.keyCode || this.generateKeyCode(),
       validFrom: booking.request.checkInDate,
       validTo: booking.request.checkOutDate,
       permissions: ['room', 'common-areas', 'entrance']
-    }))
+    })) || []
 
     // Create welcome package
     const welcomePackage = this.createWelcomePackage()
@@ -489,7 +552,7 @@ class BookingService {
 
     // Calculate final charges
     const finalCharges: PaymentRecord[] = []
-    const remainingBalance = booking.confirmation.totalAmount - 
+    const remainingBalance = (booking.confirmation?.totalAmount || 0) - 
       booking.payments
         .filter(p => p.status === 'completed' && p.amount > 0)
         .reduce((sum, p) => sum + p.amount, 0)
@@ -563,10 +626,14 @@ class BookingService {
     const checkIn = new Date(booking.request.checkInDate)
     const hoursUntilCheckIn = (checkIn.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-    const policy = booking.confirmation.cancellationPolicy
+    const policy = booking.confirmation?.cancellationPolicy
     const paidAmount = booking.payments
       .filter(p => p.status === 'completed' && p.amount > 0)
       .reduce((sum, p) => sum + p.amount, 0)
+
+    if (!policy) {
+      return 0 // No refund if no policy defined
+    }
 
     // Find applicable deadline
     const applicableDeadline = policy.deadlines

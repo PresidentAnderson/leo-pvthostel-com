@@ -215,13 +215,19 @@ class AvailabilityService {
       if (isAvailable) {
         // Apply price range filter
         if (!priceRange || (totalPrice >= priceRange.min && totalPrice <= priceRange.max)) {
+          const nights = this.calculateNights(checkInDate, checkOutDate)
+          const minAvailable = Math.min(...availability.map(slot => slot.available))
+          
           availableRooms.push({
+            roomId: room.id,
             room,
             availability,
             totalPrice,
             priceBreakdown,
             restrictions,
-            cancellationPolicy: this.getCancellationPolicy(room.type.category)
+            cancellationPolicy: this.getCancellationPolicy(room.type.category),
+            available: minAvailable,
+            averageNightlyRate: totalPrice / nights
           })
         }
       }

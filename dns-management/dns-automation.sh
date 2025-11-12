@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 DOMAIN="leo.pvthostel.com"
-DNS_DIR="/Volumes/DevOps/leo.pvthostel.com/dns-management"
+DNS_DIR="/Volumes/DevOps/Projects/02-pvthostel-domains/leo.pvthostel.com/dns-management"
 BACKUP_DIR="$DNS_DIR/backups"
 LOG_FILE="$DNS_DIR/dns-automation.log"
 
