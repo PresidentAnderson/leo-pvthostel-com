@@ -1,25 +1,23 @@
-import Hero from '@/components/Hero'
-import RoomShowcase from '@/components/RoomShowcase'
-import Amenities from '@/components/Amenities'
-import Location from '@/components/Location'
+import HeroCinematic from '@/components/HeroCinematic'
+import ValueProp from '@/components/ValueProp'
+import FlashSaleBooking from '@/components/FlashSaleBooking'
+import RoomShowcaseCinematic from '@/components/RoomShowcaseCinematic'
+import LocationCinematic from '@/components/LocationCinematic'
 import Testimonials from '@/components/Testimonials'
 import FAQ from '@/components/FAQ'
-import CTA from '@/components/CTA'
-import FlashSaleBooking from '@/components/FlashSaleBooking'
-import { HomePageCTASection } from '@/components/CTASection'
+import CTACinematic from '@/components/CTACinematic'
 
 export default function HomePage() {
   return (
-    <>
-      <Hero />
+    <div className="bg-pvt-black">
+      <HeroCinematic />
+      <ValueProp />
       <FlashSaleBooking />
-      <HomePageCTASection />
-      <RoomShowcase />
-      <Amenities />
-      <Location />
+      <RoomShowcaseCinematic />
+      <LocationCinematic />
       <Testimonials />
       <FAQ />
-      <CTA />
-    </>
+      <CTACinematic />
+    </div>
   )
 }

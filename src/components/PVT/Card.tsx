@@ -3,7 +3,7 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   shadow?: 'soft' | 'card' | 'medium' | 'hard' | 'none';
-  padding?: 'sm' | 'md' | 'lg' | 'xl';
+  padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   background?: 'light' | 'dark' | 'white';
 }
@@ -28,6 +28,7 @@ export const Card = ({
   };
 
   const paddings = {
+    none: 'p-0',
     sm: 'p-4',
     md: 'p-6',
     lg: 'p-8',
