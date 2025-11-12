@@ -10,6 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // PVT Hostel Leo Brand Colors
+        brand: {
+          black: '#0E0E0E',
+          gold: '#D3A867',
+          'gold-dark': '#c39855',
+          white: '#FFFFFF',
+        },
+        text: {
+          primary: '#111111',
+          secondary: '#555555',
+        },
+        divider: {
+          light: 'rgba(0, 0, 0, 0.08)',
+        },
         // Premium deep blue and purple gradient palette
         primary: {
           50: '#eef2ff',
