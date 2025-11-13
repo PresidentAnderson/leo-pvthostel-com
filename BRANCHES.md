@@ -136,21 +136,33 @@ experimental → documentation → delete branch
 
 ## Branch Protection Rules
 
-### `main`
+### `main` ✓ PROTECTED
+**Status**: Active branch protection enabled
+
+Protection rules:
+- ✓ **Require pull request reviews**: Minimum 1 approving review required
+- ✓ **Dismiss stale reviews**: Automatically dismiss when new commits are pushed
+- ✓ **Require status checks**: Branches must be up to date before merging
+- ✓ **Enforce for administrators**: Rules apply to all users including admins
+- ✓ **Require conversation resolution**: All discussions must be resolved
+- ✓ **Block force pushes**: No force pushes allowed
+- ✓ **Block deletions**: Branch cannot be deleted
+- ✗ Code owner reviews: Not required (can be enabled if CODEOWNERS file exists)
+
+**Direct commits to main are blocked**. All changes must go through pull requests.
+
+### `staging` (Recommended)
+Recommended protection rules:
 - Require pull request reviews (minimum 1)
 - Require status checks to pass
-- Require branches to be up to date before merging
 - No force pushes
-- No deletions
+- Allow deletions (for cleanup)
 
-### `staging`
-- Require pull request reviews
+### `develop` (Recommended)
+Recommended protection rules:
 - Require status checks to pass
-- No force pushes
-
-### `develop`
-- Require status checks to pass
-- Allow force pushes (for rebasing)
+- Allow force pushes (for rebasing and cleanup)
+- No deletion protection needed
 
 ## Deployment Strategy
 
