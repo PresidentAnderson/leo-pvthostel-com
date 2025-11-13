@@ -54,10 +54,11 @@ describe('BookingService', () => {
 
     it('should check room availability before booking', async () => {
       const booking = await bookingService.createBooking(mockBookingRequest)
-      
-      expect(booking.confirmation.roomAssignments).toBeDefined()
-      expect(booking.confirmation.roomAssignments).toHaveLength(1)
-      expect(booking.confirmation.roomAssignments[0].roomId).toBe(mockBookingRequest.roomId)
+
+      expect(booking.confirmation).toBeDefined()
+      expect(booking.confirmation?.roomAssignments).toBeDefined()
+      expect(booking.confirmation?.roomAssignments).toHaveLength(1)
+      expect(booking.confirmation?.roomAssignments[0].roomId).toBe(mockBookingRequest.roomId)
     })
 
     it('should generate unique booking reference', async () => {
@@ -73,18 +74,19 @@ describe('BookingService', () => {
 
     it('should include check-in instructions', async () => {
       const booking = await bookingService.createBooking(mockBookingRequest)
-      
-      expect(booking.confirmation.checkInInstructions).toBeDefined()
-      expect(booking.confirmation.checkInInstructions).toContain('CHECK-IN INFORMATION')
-      expect(booking.confirmation.checkInInstructions).toContain('3:00 PM')
+
+      expect(booking.confirmation).toBeDefined()
+      expect(booking.confirmation?.checkInInstructions).toBeDefined()
+      expect(booking.confirmation?.checkInInstructions).toContain('CHECK-IN INFORMATION')
+      expect(booking.confirmation?.checkInInstructions).toContain('3:00 PM')
     })
 
     it('should calculate deposit correctly', async () => {
       const booking = await bookingService.createBooking(mockBookingRequest)
-      
+
       const depositPayment = booking.payments[0]
-      const totalAmount = booking.confirmation.totalAmount
-      
+      const totalAmount = booking.confirmation?.totalAmount ?? 0
+
       expect(depositPayment.amount).toBe(Math.round(totalAmount * 0.2))
     })
   })
@@ -374,13 +376,13 @@ describe('BookingService', () => {
       })
       
       expect(modified.modifications[0].changes).toHaveLength(2)
-      expect(modified.confirmation.totalAmount).toBeDefined()
+      expect(modified.confirmation?.totalAmount).toBeDefined()
     })
 
     it('should not modify cancelled booking', async () => {
       const booking = await bookingService.createBooking(mockBookingRequest)
       await bookingService.cancelBooking(booking.id)
-      
+
       await expect(
         bookingService.modifyBooking(booking.id, { checkOutDate: '2024-12-07' })
       ).rejects.toThrow('Cannot modify a cancelled booking')
@@ -388,18 +390,18 @@ describe('BookingService', () => {
 
     it('should calculate price difference for modifications', async () => {
       const booking = await bookingService.createBooking(mockBookingRequest)
-      const originalTotal = booking.confirmation.totalAmount
-      
+      const originalTotal = booking.confirmation?.totalAmount ?? 0
+
       const modified = await bookingService.modifyBooking(booking.id, {
         checkOutDate: '2024-12-10' // Extended stay
       })
-      
+
       const modification = modified.modifications[0]
-      
-      if (modified.confirmation.totalAmount > originalTotal) {
+
+      if ((modified.confirmation?.totalAmount ?? 0) > originalTotal) {
         expect(modification.additionalCosts).toBeDefined()
         expect(modification.additionalCosts).toBeGreaterThan(0)
-      } else if (modified.confirmation.totalAmount < originalTotal) {
+      } else if ((modified.confirmation?.totalAmount ?? 0) < originalTotal) {
         expect(modification.refundAmount).toBeDefined()
         expect(modification.refundAmount).toBeGreaterThan(0)
       }
@@ -524,9 +526,9 @@ describe('BookingService', () => {
       const totalPaid = booking.payments
         .filter(p => p.status === 'completed' && p.amount > 0)
         .reduce((sum, p) => sum + p.amount, 0)
-      
-      const remainingBalance = booking.confirmation.totalAmount - totalPaid
-      
+
+      const remainingBalance = (booking.confirmation?.totalAmount ?? 0) - totalPaid
+
       if (remainingBalance > 0) {
         expect(checkOutRecord.finalCharges).toHaveLength(1)
         expect(checkOutRecord.finalCharges[0].amount).toBe(remainingBalance)
